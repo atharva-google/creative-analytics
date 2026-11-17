@@ -81,6 +81,13 @@ def probe_video(video_path: str) -> Dict[str, Any]:
         frames = capture.get(cv2.CAP_PROP_FRAME_COUNT)
         width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # Container properties can be readable even when frames are not
+        # (unsupported codec). Shot detection would then silently find no cuts.
+        decoded, _ = capture.read()
+        if not decoded:
+            raise ValueError(
+                f"Could not decode video frames (unsupported codec?): {video_path}"
+            )
     finally:
         capture.release()
     if not fps or not width or not height:
@@ -99,7 +106,13 @@ def _download_youtube(link: str, folder: str) -> Dict[str, Any]:
     options = {
         "quiet": True,
         "no_warnings": True,
-        "format": "bv*[height<=480][ext=mp4]/bv*[height<=480]/b[height<=480]/b",
+        # Prefer H.264: OpenCV often cannot decode AV1, which YouTube also
+        # serves as .mp4. Never fall back to AV1.
+        "format": (
+            "bv*[height<=480][vcodec^=avc1]/b[height<=480][vcodec^=avc1]/"
+            "bv*[height<=480][vcodec!^=av01]/b[height<=480][vcodec!^=av01]/"
+            "bv*[vcodec^=avc1]/b[vcodec!^=av01]"
+        ),
         "outtmpl": str(Path(folder) / "%(id)s.%(ext)s"),
     }
     with yt_dlp.YoutubeDL(options) as ydl:
