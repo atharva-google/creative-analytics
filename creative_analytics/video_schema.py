@@ -7,7 +7,8 @@ data from the Phase 1 profile:
 - hero_product_hook.hook_type           -> profile.key_visuals
 - distinctive_brand_asset.brand_asset   -> profile.distinctive_brand_assets
 
-Each value is a short text label. Where the profile has a list, Gemini uses
+Each field is a list (one entry per distinct asset found in the video, empty
+if none). Each value is a short text label. Where the profile has a list, Gemini uses
 the exact name of a known asset when it matches and describes anything else in
 its own words. Where the list is empty (or brand research was skipped), Gemini
 always describes the asset in its own words.
@@ -292,7 +293,7 @@ def build_brand_features(profile: BrandProfile) -> Type[BaseModel]:
         "SonicAsset",
         "sonic_asset",
         profile.sonic_assets,
-        "The exact timestamp in seconds when this sonic asset is heard.",
+        "The exact timestamp in seconds when this sonic asset is first heard.",
         "The brand sonic asset heard in the audio track.",
         "3-4 words highly descriptive custom string identifying any official brand sonic assets, sound mnemonics, or signature product interaction sounds detected in the audio track. "
         "Examples: 'KitKat Acoustic Snap', 'Nescafé Shaker / Stir Rhythm', 'Intel Bong', 'Xbox Startup Chime'.",
@@ -301,7 +302,7 @@ def build_brand_features(profile: BrandProfile) -> Type[BaseModel]:
         "ProductHook",
         "hook_type",
         profile.key_visuals,
-        "The exact timestamp in seconds when this product hook begins.",
+        "The exact timestamp in seconds when this product hook first begins.",
         "The sensory or tactile product hook shown.",
         "A short, highly descriptive 3-4 word phrase capturing the sensory, tactile, or physical trigger used to make the product look appealing (ex: Steam Rise, Condensation Drip, Sauce Sizzle, Cheese Pull, Metallic Shine).",
     )
@@ -351,24 +352,24 @@ def build_brand_features(profile: BrandProfile) -> Type[BaseModel]:
             ),
         ),
         brand_sonic_asset=(
-            Optional[SonicAsset],
+            List[SonicAsset],
             Field(
                 ...,
-                description="Timing and classification of the brand's custom sonic signature. Set to null/None if the ad only uses standard background music, stock sound effects, or basic voiceover.",
+                description="Timing and classification of every distinct brand sonic signature heard in the ad. One entry per distinct sonic asset, with the timestamp of when it is first heard; do not repeat the same asset. Empty list [] if the ad only uses standard background music, stock sound effects, or basic voiceover.",
             ),
         ),
         hero_product_hook=(
-            Optional[ProductHook],
+            List[ProductHook],
             Field(
                 ...,
-                description="Visually or audibly compelling sensory or tactile product hook present in the ad. Set to null/None if no distinct sensory product hooks are shown.",
+                description="Every distinct visually or audibly compelling sensory or tactile product hook present in the ad. One entry per distinct hook, with the timestamp of when it first begins; do not repeat the same hook. Empty list [] if no distinct sensory product hooks are shown.",
             ),
         ),
         distinctive_brand_asset=(
-            Optional[DistinctiveBrandAsset],
+            List[DistinctiveBrandAsset],
             Field(
                 ...,
-                description="The most prominent distinctive brand asset featured in the creative, and when it first appears. Set to null/None if the creative features no distinctive brand asset beyond a basic text logo.",
+                description="Every distinct distinctive brand asset prominently featured in the creative. One entry per distinct asset, with the timestamp of when it first appears; do not repeat the same asset. Empty list [] if the creative features no distinctive brand asset beyond a basic text logo.",
             ),
         ),
     )

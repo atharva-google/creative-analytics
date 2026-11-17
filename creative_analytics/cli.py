@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 from .brand_profile import ASSET_FIELDS, empty_profile, get_or_create_profile, profile_path
 from .client import DEFAULT_MODEL, make_client
@@ -43,6 +44,12 @@ def _parser() -> argparse.ArgumentParser:
         "--refresh-profile",
         action="store_true",
         help="Re-run Phase 1 even if a saved brand profile exists (overwrites edits).",
+    )
+    parser.add_argument(
+        "--fast-research",
+        action="store_true",
+        help="Run brand research with low thinking effort: quicker, possibly "
+        "less thorough.",
     )
     parser.add_argument(
         "--skip-brand-research",
@@ -92,6 +99,18 @@ def main(argv=None) -> int:
     client = None if args.command == "custom-status" else make_client()
     failed = 0
 
+    # Brand research for all brand/products runs at the same time, up front.
+    profiles = {}
+    if args.command in ("profile", "extract", "run") and not args.skip_brand_research:
+        def research(job):
+            return get_or_create_profile(
+                client, job, args.output_dir, args.model,
+                refresh=args.refresh_profile, fast=args.fast_research,
+            )
+
+        with ThreadPoolExecutor(max_workers=args.max_workers) as pool:
+            profiles = dict(zip([job.slug for job in jobs], pool.map(research, jobs)))
+
     for job in jobs:
         print(f"\n{job.brand} / {job.product}")
         features = custom.features_for(job.brand, job.product)
@@ -116,9 +135,7 @@ def main(argv=None) -> int:
             profile = empty_profile(job.brand, job.product)
             print("  profile: skipped (brand-data fields will be free text)")
         else:
-            profile = get_or_create_profile(
-                client, job, args.output_dir, args.model, refresh=args.refresh_profile
-            )
+            profile = profiles[job.slug]
             summary = ", ".join(f"{len(getattr(profile, f))} {f}" for f in ASSET_FIELDS)
             print(f"  profile: {profile_path(args.output_dir, job)} ({summary})")
         if args.command == "profile":

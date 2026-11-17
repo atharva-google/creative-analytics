@@ -56,7 +56,7 @@ python -m creative_analytics run     --input in.json   # both
 
 Options: `--custom`, `--brand`, `--product`, `--output-dir` (default `output`),
 `--model`, `--max-workers` (default 4), `--refresh-profile`,
-`--skip-brand-research`, `--skip-video-stats`.
+`--fast-research`, `--skip-brand-research`, `--skip-video-stats`.
 
 ## Phase 1: brand profile
 
@@ -70,6 +70,10 @@ It is produced by one Gemini call per brand and product, which researches the
 brand with Google Search grounding and returns the profile as JSON. This needs
 a Gemini 3 series model or newer. Phase 1 only gathers data; it does no
 analysis.
+
+Research for all brand/products in the input runs at the same time (up to
+`--max-workers`). `--fast-research` asks Gemini for low thinking effort, which
+is quicker but may be less thorough.
 
 **Review this file before running Phase 2.** Its lists are the names Gemini is
 told to prefer for the matching brand-data fields. You can edit it by hand (rename, remove or
@@ -109,9 +113,9 @@ guided by the Phase 1 brand profile when one is available.
 | | `spoken_brand_name` | G |
 | | `see_and_say_branding` | G |
 | | `brand_total_screen_time_sec` | G |
-| | `brand_sonic_asset` (timestamp, sonic_asset) | G + brand |
-| | `hero_product_hook` (timestamp, hook_type) | G + brand |
-| | `distinctive_brand_asset` (timestamp, brand_asset) | G + brand |
+| | `brand_sonic_asset` (list of timestamp, sonic_asset) | G + brand |
+| | `hero_product_hook` (list of timestamp, hook_type) | G + brand |
+| | `distinctive_brand_asset` (list of timestamp, brand_asset) | G + brand |
 | `connect_features` | `narrative_arc`, `linguistic_register`, `audio_mix`, `music_tempo_bpm` | G |
 | | `dialogue_wpm`, `jargon_intensity` | G |
 | | `humor_details` (integration, archetype) | G |
@@ -121,8 +125,9 @@ guided by the Phase 1 brand profile when one is available.
 
 ### Brand-data fields
 
-`brand_sonic_asset`, `hero_product_hook` and `distinctive_brand_asset` each
-hold one asset and its timestamp, or null if the video has none.
+`brand_sonic_asset`, `hero_product_hook` and `distinctive_brand_asset` are
+lists. Each has one entry per distinct asset found in the video, with the
+timestamp of its first occurrence, and is empty if the video has none.
 
 - **With brand research:** Gemini is given the profile's list for the field. If
   the asset in the video matches a listed one, it records that exact name. If

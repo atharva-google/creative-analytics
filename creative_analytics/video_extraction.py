@@ -46,7 +46,7 @@ Your analysis must be rigorously based only on the visual and auditory informati
 ## CORE DIRECTIVES
 - Absolute Objectivity: Your analysis must be based exclusively on concrete evidence from the video. Do not infer, assume, or use any external knowledge. If you cannot see or hear it in the video, it did not happen.
 - No Hallucination: Your primary directive is to avoid making up information. If a feature is ambiguous, not clearly shown, or impossible to verify from the video, skip that feature.
-- Brand Reference Lists: Some fields list assets this brand is known to use. The list only tells you what to look and listen for; it is not evidence that an asset appears. Report an asset only if it is actually present in this video. If it matches a listed asset, use that exact name; if it is present but not listed, describe it in your own words; if nothing is present, return null.
+- Brand Reference Lists: Some fields list assets this brand is known to use. The list only tells you what to look and listen for; it is not evidence that an asset appears. Report an asset only if it is actually present in this video. If it matches a listed asset, use that exact name; if it is present but not listed, describe it in your own words; if nothing is present, return an empty list.
 - Strict Adherence to Format: The output format is non-negotiable. Any deviation will result in failure."""
 
 _USER_PROMPT = "Analyse this video advertisement for the brand '{brand}', product '{product}'."
@@ -77,6 +77,19 @@ def _canonical_name(value: str, assets) -> str:
     return value.strip()
 
 
+def _distinct_assets(entries, key: str, assets) -> List[Dict[str, Any]]:
+    """One entry per distinct asset, at its earliest timestamp, in time order."""
+    earliest: Dict[str, Dict[str, Any]] = {}
+    for entry in entries or []:
+        name = _canonical_name(entry[key], assets)
+        if not name:
+            continue
+        seen = earliest.get(name.lower())
+        if seen is None or entry["timestamp"] < seen["timestamp"]:
+            earliest[name.lower()] = {**entry, key: name}
+    return sorted(earliest.values(), key=lambda e: e["timestamp"])
+
+
 def build_row(
     link: str,
     profile: BrandProfile,
@@ -92,8 +105,7 @@ def build_row(
         ("hero_product_hook", "hook_type", profile.key_visuals),
         ("distinctive_brand_asset", "brand_asset", profile.distinctive_brand_assets),
     ):
-        if brand[block]:
-            brand[block] = {**brand[block], key: _canonical_name(brand[block][key], assets)}
+        brand[block] = _distinct_assets(brand[block], key, assets)
     brand["brand_in_first_5s"] = brand["first_brand_touchpoint_sec"] <= FIRST_SECONDS_WINDOW
     return {
         "video_link": link,

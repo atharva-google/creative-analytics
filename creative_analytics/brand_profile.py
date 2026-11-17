@@ -113,13 +113,23 @@ def dedupe_assets(assets: List[BrandAsset], limit: int = MAX_ITEMS_PER_FIELD) ->
 
 
 def collect_brand_profile(
-    client: genai.Client, brand: str, product: str, model: str = DEFAULT_MODEL
+    client: genai.Client,
+    brand: str,
+    product: str,
+    model: str = DEFAULT_MODEL,
+    fast: bool = False,
 ) -> BrandProfile:
     """One Gemini call: research with Google Search and return the profile JSON.
 
     Combining Search grounding with a JSON response schema in one request
     needs a Gemini 3 series model or newer.
+
+    `fast` asks the model for low thinking effort, which shortens the call but
+    may make the research less thorough.
     """
+    thinking = (
+        types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW) if fast else None
+    )
     response = with_retries(
         lambda: client.models.generate_content(
             model=model,
@@ -131,6 +141,7 @@ def collect_brand_profile(
                 response_mime_type="application/json",
                 response_schema=BrandResearch,
                 temperature=0,
+                thinking_config=thinking,
             ),
         )
     )
@@ -178,6 +189,7 @@ def get_or_create_profile(
     output_dir: str,
     model: str = DEFAULT_MODEL,
     refresh: bool = False,
+    fast: bool = False,
 ) -> BrandProfile:
     """Reuse the saved profile if present, so hand edits to the JSON are kept."""
     path = profile_path(output_dir, job)
@@ -185,6 +197,6 @@ def get_or_create_profile(
         return load_profile(path)
     if client is None:
         raise RuntimeError(f"No saved profile at {path} and no client to create one.")
-    profile = collect_brand_profile(client, job.brand, job.product, model)
+    profile = collect_brand_profile(client, job.brand, job.product, model, fast)
     save_profile(profile, path)
     return profile
