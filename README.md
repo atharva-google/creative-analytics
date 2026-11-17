@@ -15,17 +15,13 @@ later be joined to performance metrics (VTR, CTR).
 Open `notebooks/quickstart.ipynb`, or run:
 
 ```python
-import os
-from google.colab import userdata
-
-# Add GEMINI_API_KEY and GITHUB_TOKEN under Colab Secrets first.
-# The repo is private, so cloning needs a GitHub token with read access to it.
-os.environ["GEMINI_API_KEY"] = userdata.get("GEMINI_API_KEY")
-os.environ["GITHUB_TOKEN"] = userdata.get("GITHUB_TOKEN")
-
-!git clone https://$GITHUB_TOKEN@github.com/atharva-google/creative-analytics.git
+!git clone https://github.com/atharva-google/creative-analytics.git
 %cd creative-analytics
 %pip install -q -e .
+
+import os
+from google.colab import userdata
+os.environ["GEMINI_API_KEY"] = userdata.get("GEMINI_API_KEY")  # add it under Colab Secrets first
 
 !python -m creative_analytics run --input videos.csv
 ```
