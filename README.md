@@ -112,7 +112,8 @@ guided by the Phase 1 brand profile when one is available.
 | | `logo_present` | G |
 | | `spoken_brand_name` | G |
 | | `see_and_say_branding` | G |
-| | `brand_total_screen_time_sec` | G |
+| | `logo_screen_time_sec` | G |
+| | `product_screen_time_sec` | G |
 | | `brand_sonic_asset` (list of timestamp, sonic_asset) | G + brand |
 | | `hero_product_hook` (list of timestamp, hook_type) | G + brand |
 | | `distinctive_brand_asset` (list of timestamp, brand_asset) | G + brand |
@@ -138,6 +139,13 @@ timestamp of its first occurrence, and is empty if the video has none.
 
 Brand research is optional. Pass `--skip-brand-research` to skip Phase 1
 entirely; all three fields are then free text.
+
+`logo_screen_time_sec` counts the logo as a graphic (overlay, corner bug, end
+card, readable signage), including a small persistent one. It excludes the logo
+printed on the pack. `product_screen_time_sec` counts the product or pack
+whenever it is recognisable, including when held or used, and excludes
+background clutter. The two can overlap in time, so they do not add up to a
+single brand total.
 
 `spoken_brand_name` is true if the brand name is spoken anywhere.
 `see_and_say_branding` is true only if it is spoken while branding is on screen.

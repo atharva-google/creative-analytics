@@ -344,11 +344,28 @@ def build_brand_features(profile: BrandProfile) -> Type[BaseModel]:
                 description="Set to True only if the ad displays visual brand assets (logo, packaging, or text) at the exact same moment the brand name is spoken aloud. This 'see-and-say' alignment must occur at least once in the video. A spoken brand name with no branding on screen at that moment does not count.",
             ),
         ),
-        brand_total_screen_time_sec=(
+        logo_screen_time_sec=(
             float,
             Field(
                 ...,
-                description="The cumulative, total duration in seconds that the brand's visual identity (logo, branded packaging, or clearly branded product) is prominently visible on screen. CRITICAL: Do not count background clutter; only count instances where the branding is a primary or highly legible focal point.",
+                description=(
+                    "The cumulative, total duration in seconds that the official brand logo is on screen as a graphic element and legible. "
+                    "COUNT: a logo shown as an overlay, corner bug or watermark (for as long as it stays on screen, even if small), a logo on a title or end card, and a logo on signage or props when it is clearly readable. "
+                    "DO NOT COUNT: the logo printed on the product or its packaging (that belongs to product_screen_time_sec), the brand name written as plain text without the logo design, or a logo too small, blurred or brief to read. "
+                    "Output 0 if the logo never appears this way."
+                ),
+            ),
+        ),
+        product_screen_time_sec=(
+            float,
+            Field(
+                ...,
+                description=(
+                    "The cumulative, total duration in seconds that the branded product or its packaging is on screen and recognisable as this brand's product. "
+                    "COUNT: pack shots, close-ups, and the product being held, prepared, used or consumed by a character, as long as the product or pack can be recognised. "
+                    "DO NOT COUNT: the product as out-of-focus or distant background clutter (e.g. on a far shelf), moments where it is hidden or too small to recognise, or the logo shown on its own without the product. "
+                    "Output 0 if the product never appears."
+                ),
             ),
         ),
         brand_sonic_asset=(
